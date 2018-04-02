@@ -2,20 +2,25 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kafka
+  labels:
+    app: kafka
 spec:
   ports:
   - port: 29092
   clusterIP: None
   selector:
     app: kafka
-----
-apiVersion: apps/v1beta1
+---
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: broker
+  name: kafka
 spec:
+  selector:
+    matchLabels:
+      app: kafka
   serviceName: "kafka"
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       labels:
@@ -24,7 +29,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: kafka
-        image: confluentinc/cp-kafka:3.3.1
+        image: docker.artifactory.kinaxis.com/kafka/cp-kafka:3.3.1
         env:
         - name: KAFKA_ZOOKEEPER_CONNECT
           value: "zookeeper:32181"
@@ -37,6 +42,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: zookeeper
+  labels:
+    app: zookeeper
 spec:
   ports:
   - port: 32181
@@ -44,13 +51,16 @@ spec:
   selector:
     app: zookeeper
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zookeeper
 spec:
+  selector:
+    matchLabels:
+      app: zookeeper
   serviceName: "zookeeper"
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       labels:
@@ -59,7 +69,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: zookeeper
-        image: confluentinc/cp-zookeeper:3.3.1
+        image: docker.artifactory.kinaxis.com/kafka/cp-zookeeper:3.3.1
         env:
         - name: ZOOKEEPER_CLIENT_PORT
           value: "32181"

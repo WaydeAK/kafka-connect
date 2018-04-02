@@ -14,3 +14,14 @@ We are only using a few of the containers/applications that Confluent offer for 
 
 We are currently using version 3.3.1 because of a .Net library dependency
 
+
+## Commands to cleanup
+
+kubectl delete statefulsets/zookeeper
+kubectl delete statefulsets/kafka
+kubectl delete svc/zookeeper
+kubectl delete svc/kafka
+
+## References
+
+- https://github.com/Yolean/confluent-quickstart-kubernetes
