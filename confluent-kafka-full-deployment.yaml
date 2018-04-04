@@ -1,3 +1,255 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: kafka0
+  labels:
+    type: local
+spec:
+  storageClassName: kafka0
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/kafka/kafka-0"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: kafka1
+  labels:
+    type: local
+spec:
+  storageClassName: kafka1
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/kafka/kafka-1"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: kafka2
+  labels:
+    type: local
+spec:
+  storageClassName: kafka2
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/kafka/kafka-2"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: kafka-kafka-0
+spec:
+  storageClassName: kafka0
+  accessModes:
+    - ReadWriteOnce
+  volumeName: kafka0
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: kafka-kafka-1
+spec:
+  storageClassName: kafka1
+  accessModes:
+    - ReadWriteOnce
+  volumeName: kafka1
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: kafka-kafka-2
+spec:
+  storageClassName: kafka2
+  accessModes:
+    - ReadWriteOnce
+  volumeName: kafka2
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: zookeeper0
+  labels:
+    type: local
+spec:
+  storageClassName: zookeeper0
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/zookeeper/zookeeper-0"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: zookeeper1
+  labels:
+    type: local
+spec:
+  storageClassName: zookeeper1
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/zookeeper/zookeeper-1"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: zookeeper2
+  labels:
+    type: local
+spec:
+  storageClassName: zookeeper2
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/zookeeper/zookeeper-2"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: zookeeper-zookeeper-0
+spec:
+  storageClassName: zookeeper0
+  accessModes:
+    - ReadWriteOnce
+  volumeName: zookeeper0
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: zookeeper-zookeeper-1
+spec:
+  storageClassName: zookeeper1
+  accessModes:
+    - ReadWriteOnce
+  volumeName: zookeeper1
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: zookeeper-zookeeper-2
+spec:
+  storageClassName: zookeeper2
+  accessModes:
+    - ReadWriteOnce
+  volumeName: zookeeper2
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: connect0
+  labels:
+    type: local
+spec:
+  storageClassName: connect0
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/connect/connect-0"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: connect1
+  labels:
+    type: local
+spec:
+  storageClassName: connect1
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/connect/connect-1"
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: connect2
+  labels:
+    type: local
+spec:
+  storageClassName: connect2
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/kafka/connect/connect-2"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: connect-connect-0
+spec:
+  storageClassName: connect0
+  accessModes:
+    - ReadWriteOnce
+  volumeName: connect0
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: connect-connect-1
+spec:
+  storageClassName: connect1
+  accessModes:
+    - ReadWriteOnce
+  volumeName: connect1
+  resources:
+    requests:
+      storage: 10Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: connect-connect-2
+spec:
+  storageClassName: connect2
+  accessModes:
+    - ReadWriteOnce
+  volumeName: connect2
+  resources:
+    requests:
+      storage: 10Gi
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -37,6 +289,17 @@ spec:
           value: PLAINTEXT://broker-0.kafka.svc.cluster.local:29092
         ports:
         - containerPort: 29092
+        volumeMounts:
+        - name: kafka
+          mountPath: /kafka/kafka
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 10Gi
 ---
 apiVersion: v1
 kind: Service
@@ -75,3 +338,61 @@ spec:
           value: "32181"
         ports:
         - containerPort: 32181
+        volumeMounts:
+        - name: zookeeper
+          mountPath: /kafka/zookeeper
+  volumeClaimTemplates:
+  - metadata:
+      name: zookeeper
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: connect
+  labels:
+    app: connect
+spec:
+  ports:
+  - port: 32181
+  clusterIP: None
+  selector:
+    app: connect
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: connect
+spec:
+  selector:
+    matchLabels:
+      app: connect
+  serviceName: "connect"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: connect
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: connect
+        image: docker.artifactory.kinaxis.com/kafka/cp-kafka-connect:3.3.1
+        ports:
+        - containerPort: 32182
+        volumeMounts:
+        - name: connect
+          mountPath: /kafka/connect
+  volumeClaimTemplates:
+  - metadata:
+      name: connect
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: manual
+      resources:
+        requests:
+          storage: 5Gi

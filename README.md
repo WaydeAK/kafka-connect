@@ -17,10 +17,16 @@ We are currently using version 3.3.1 because of a .Net library dependency
 
 ## Commands to cleanup
 
+```
 kubectl delete statefulsets/zookeeper
 kubectl delete statefulsets/kafka
 kubectl delete svc/zookeeper
 kubectl delete svc/kafka
+kubectl delete pvc/kafka-kafka-0
+kubectl delete pvc/zookeeper-zookeeper-0
+kubectl delete pv/kafka
+kubectl delete pv/zookeeper
+```
 
 ## References
 
