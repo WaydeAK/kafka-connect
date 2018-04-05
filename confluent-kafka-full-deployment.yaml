@@ -281,10 +281,10 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: kafka
-        image: docker.artifactory.kinaxis.com/kafka/cp-kafka:3.3.1
+        image: docker.artifactory.company.com/kafka/cp-kafka:3.3.1
         env:
         - name: KAFKA_ZOOKEEPER_CONNECT
-          value: "zookeeper:32181"
+          value: "zookeeper:2181"
         - name: KAFKA_ADVERTISED_LISTENERS
           value: PLAINTEXT://broker-0.kafka.svc.cluster.local:29092
         ports:
@@ -309,7 +309,12 @@ metadata:
     app: zookeeper
 spec:
   ports:
-  - port: 32181
+  - port: 2181
+    name: client
+  - port: 2888
+    name: server
+  - port: 3888
+    name: leader-election
   clusterIP: None
   selector:
     app: zookeeper
@@ -332,15 +337,32 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: zookeeper
-        image: docker.artifactory.kinaxis.com/kafka/cp-zookeeper:3.3.1
+        image: docker.artifactory.company.com/kafka/cp-zookeeper:3.3.1
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.5"
         env:
+        - name: ZOOKEEPER_SERVER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['spec.pod.beta.kubernetes.io/statefulset-index']
         - name: ZOOKEEPER_CLIENT_PORT
-          value: "32181"
+          value: "2181"
+        - name: DATA_DIR
+          value: /var/lib/zookeeper/data
+        - name: DATA_LOG_DIR
+          value: /var/lib/zookeeper/data/log
         ports:
-        - containerPort: 32181
+        - containerPort: 2181
+          name: client
+        - containerPort: 2888
+          name: server
+        - containerPort: 3888
+          name: leader-election
         volumeMounts:
         - name: zookeeper
-          mountPath: /kafka/zookeeper
+          mountPath: /var/lib/zookeeper
   volumeClaimTemplates:
   - metadata:
       name: zookeeper
@@ -381,7 +403,7 @@ spec:
       terminationGracePeriodSeconds: 10
       containers:
       - name: connect
-        image: docker.artifactory.kinaxis.com/kafka/cp-kafka-connect:3.3.1
+        image: docker.artifactory.company.com/kafka/cp-kafka-connect:3.3.1
         ports:
         - containerPort: 32182
         volumeMounts:
