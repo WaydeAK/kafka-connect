@@ -253,13 +253,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: kafka
+  name: kafka-broker
   labels:
     app: kafka
 spec:
   ports:
-  - port: 29092
-  clusterIP: None
+  - port: 9092
+  clusterIP: 172.168.1.100
   selector:
     app: kafka
 ---
@@ -286,9 +286,9 @@ spec:
         - name: KAFKA_ZOOKEEPER_CONNECT
           value: "zookeeper:2181"
         - name: KAFKA_ADVERTISED_LISTENERS
-          value: PLAINTEXT://broker-0.kafka.svc.cluster.local:29092
+          value: PLAINTEXT://broker-0.kafka.svc.cluster.local:9092
         ports:
-        - containerPort: 29092
+        - containerPort: 9092
         volumeMounts:
         - name: kafka
           mountPath: /kafka/kafka
@@ -375,13 +375,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: connect
+  name: connect-rest
   labels:
     app: connect
 spec:
   ports:
-  - port: 32181
-  clusterIP: None
+  - port: 8083
+  clusterIP: 172.168.1.101
   selector:
     app: connect
 ---
@@ -404,8 +404,13 @@ spec:
       containers:
       - name: connect
         image: docker.artifactory.company.com/kafka/cp-kafka-connect:3.3.1
+        env:
+          - name: CONNECT_BOOTSTRAP_SERVERS
+            value: PLAINTEXT://broker-0.kafka.svc.cluster.local:9092
+          - name: CONNECT_GROUP_ID
+            value: kinaxis
         ports:
-        - containerPort: 32182
+        - containerPort: 8083
         volumeMounts:
         - name: connect
           mountPath: /kafka/connect
