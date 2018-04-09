@@ -6,9 +6,9 @@
 1. [Kubernetes Resources](#resources)
 1. [Commands to cleanup](#cleanup)
 1. [Issues](#issues)
-        1. [Kafka Connect](#connect)
-        1. [Zookeeper](#zookeeper)
-        1. [Kafka](#kafka)
+    1. [Kafka Connect](#connect)
+    1. [Zookeeper](#zookeeper)
+    1. [Kafka](#kafka)
 1. [References](#references)
 
 Deploying Confluent Kafka on Kubernetes
@@ -50,7 +50,7 @@ po/zookeeper-2   1/1       Running            0          16m
 
 NAME             TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)     AGE
 svc/connect      ClusterIP   None          <none>        32181/TCP   17m
-svc/kafka        ClusterIP   None          <none>        29092/TCP   17m
+svc/kafka-broker ClusterIP   172.21.82.100 <none>        29092/TCP   17m
 svc/kubernetes   ClusterIP   172.21.82.1   <none>        443/TCP     8d
 svc/zookeeper    ClusterIP   None          <none>        32181/TCP   17m
 ```
@@ -62,8 +62,8 @@ kubectl delete statefulsets/zookeeper
 kubectl delete statefulsets/kafka
 kubectl delete statefulsets/connect
 kubectl delete svc/zookeeper
-kubectl delete svc/kafka
-kubectl delete svc/connect
+kubectl delete svc/kafka-broker
+kubectl delete svc/connect-rest
 kubectl delete pvc/kafka-kafka-0
 kubectl delete pvc/kafka-kafka-1
 kubectl delete pvc/kafka-kafka-2
@@ -170,3 +170,6 @@ Not sure what happens if that zookeeper node was to die or restart
 
 - https://github.com/Yolean/confluent-quickstart-kubernetes
 - https://kubernetes.io/docs/tutorials/stateful-application/zookeeper/
+- https://github.com/confluentinc/schema-registry/issues/689
+- https://github.com/kubernetes/kubernetes/issues/40651
+- https://github.com/confluentinc/cp-docker-images/wiki/Getting-Started
