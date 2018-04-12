@@ -85,57 +85,57 @@ spec:
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: zookeeper0
+  name: zk0
   labels:
     type: local
 spec:
-  storageClassName: zookeeper0
+  storageClassName: zk0
   capacity:
     storage: 1Gi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/kafka/zookeeper/zookeeper-0"
+    path: "/kafka/zookeeper/zk-0"
 ---
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: zookeeper1
+  name: zk1
   labels:
     type: local
 spec:
-  storageClassName: zookeeper1
+  storageClassName: zk1
   capacity:
     storage: 1Gi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/kafka/zookeeper/zookeeper-1"
+    path: "/kafka/zookeeper/zk-1"
 ---
 kind: PersistentVolume
 apiVersion: v1
 metadata:
-  name: zookeeper2
+  name: zk2
   labels:
     type: local
 spec:
-  storageClassName: zookeeper2
+  storageClassName: zk2
   capacity:
     storage: 1Gi
   accessModes:
     - ReadWriteMany
   hostPath:
-    path: "/kafka/zookeeper/zookeeper-2"
+    path: "/kafka/zookeeper/zk-2"
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: zookeeper-zookeeper-0
+  name: zookeeper-zk-0
 spec:
-  storageClassName: zookeeper0
+  storageClassName: zk0
   accessModes:
     - ReadWriteOnce
-  volumeName: zookeeper0
+  volumeName: zk0
   resources:
     requests:
       storage: 1Gi
@@ -143,12 +143,12 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: zookeeper-zookeeper-1
+  name: zookeeper-zk-1
 spec:
-  storageClassName: zookeeper1
+  storageClassName: zk1
   accessModes:
     - ReadWriteOnce
-  volumeName: zookeeper1
+  volumeName: zk1
   resources:
     requests:
       storage: 1Gi
@@ -156,12 +156,12 @@ spec:
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: zookeeper-zookeeper-2
+  name: zookeeper-zk-2
 spec:
-  storageClassName: zookeeper2
+  storageClassName: zk2
   accessModes:
     - ReadWriteOnce
-  volumeName: zookeeper2
+  volumeName: zk2
   resources:
     requests:
       storage: 1Gi
@@ -271,7 +271,7 @@ spec:
   selector:
     matchLabels:
       app: kafka
-  serviceName: "kafka"
+  serviceName: "kafka-broker"
   replicas: 3
   template:
     metadata:
@@ -284,9 +284,9 @@ spec:
         image: docker.artifactory.company.com/kafka/cp-kafka:3.3.1
         env:
         - name: KAFKA_ZOOKEEPER_CONNECT
-          value: "zookeeper:2181"
+          value: "zk-cs:2181"
         - name: KAFKA_ADVERTISED_LISTENERS
-          value: PLAINTEXT://broker-0.kafka.svc.cluster.local:9092
+          value: PLAINTEXT://kafka-broker.default.svc.cluster.local:9092
         ports:
         - containerPort: 9092
         volumeMounts:
@@ -304,55 +304,78 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: zookeeper
+  name: zk-hs
   labels:
-    app: zookeeper
+    app: zk
 spec:
   ports:
-  - port: 2181
-    name: client
   - port: 2888
     name: server
   - port: 3888
     name: leader-election
   clusterIP: None
   selector:
-    app: zookeeper
+    app: zk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zk-cs
+  labels:
+    app: zk
+spec:
+  ports:
+  - port: 2181
+    name: client
+  selector:
+    app: zk
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: zk-pdb
+spec:
+  selector:
+    matchLabels:
+      app: zk
+  maxUnavailable: 1
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: zookeeper
+  name: zk
 spec:
   selector:
     matchLabels:
-      app: zookeeper
-  serviceName: "zookeeper"
+      app: zk
+  serviceName: zk-hs
   replicas: 3
+  updateStrategy:
+    type: RollingUpdate
+  podManagementPolicy: Parallel
   template:
     metadata:
       labels:
-        app: zookeeper
+        app: zk
     spec:
-      terminationGracePeriodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - zk
+              topologyKey: "kubernetes.io/hostname"
       containers:
-      - name: zookeeper
-        image: docker.artifactory.company.com/kafka/cp-zookeeper:3.3.1
+      - name: kubernetes-zookeeper
+        imagePullPolicy: Always
+        image: "k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10"
         resources:
           requests:
             memory: "1Gi"
             cpu: "0.5"
-        env:
-        - name: ZOOKEEPER_SERVER_ID
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.annotations['spec.pod.beta.kubernetes.io/statefulset-index']
-        - name: ZOOKEEPER_CLIENT_PORT
-          value: "2181"
-        - name: DATA_DIR
-          value: /var/lib/zookeeper/data
-        - name: DATA_LOG_DIR
-          value: /var/lib/zookeeper/data/log
         ports:
         - containerPort: 2181
           name: client
@@ -360,6 +383,43 @@ spec:
           name: server
         - containerPort: 3888
           name: leader-election
+        command:
+        - sh
+        - -c
+        - "start-zookeeper \
+          --servers=3 \
+          --data_dir=/var/lib/zookeeper/data \
+          --data_log_dir=/var/lib/zookeeper/data/log \
+          --conf_dir=/opt/zookeeper/conf \
+          --client_port=2181 \
+          --election_port=3888 \
+          --server_port=2888 \
+          --tick_time=2000 \
+          --init_limit=10 \
+          --sync_limit=5 \
+          --heap=512M \
+          --max_client_cnxns=60 \
+          --snap_retain_count=3 \
+          --purge_interval=12 \
+          --max_session_timeout=40000 \
+          --min_session_timeout=4000 \
+          --log_level=INFO"
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "zookeeper-ready 2181"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "zookeeper-ready 2181"
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
         volumeMounts:
         - name: zookeeper
           mountPath: /var/lib/zookeeper
@@ -393,7 +453,7 @@ spec:
   selector:
     matchLabels:
       app: connect
-  serviceName: "connect"
+  serviceName: "connect-rest"
   replicas: 3
   template:
     metadata:
@@ -405,10 +465,32 @@ spec:
       - name: connect
         image: docker.artifactory.company.com/kafka/cp-kafka-connect:3.3.1
         env:
-          - name: CONNECT_BOOTSTRAP_SERVERS
-            value: PLAINTEXT://broker-0.kafka.svc.cluster.local:9092
-          - name: CONNECT_GROUP_ID
-            value: kinaxis
+        - name: CONNECT_BOOTSTRAP_SERVERS
+          value: "PLAINTEXT://kafka-broker.default.svc.cluster.local:9092"
+        - name: CONNECT_REST_PORT
+          value: "8083"
+        - name: CONNECT_GROUP_ID
+          value: "quickstart"
+        - name: CONNECT_CONFIG_STORAGE_TOPIC
+          value: "quickstart-config"
+        - name: CONNECT_OFFSET_STORAGE_TOPIC
+          value: "quickstart-offsets"
+        - name: CONNECT_STATUS_STORAGE_TOPIC
+          value: "quickstart-status"
+        - name: CONNECT_KEY_CONVERTER
+          value: "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_VALUE_CONVERTER
+          value: "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_INTERNAL_KEY_CONVERTER
+          value: "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_INTERNAL_VALUE_CONVERTER
+          value: "org.apache.kafka.connect.json.JsonConverter"
+        - name: CONNECT_REST_ADVERTISED_HOST_NAME
+          value: "connect-rest.default.svc.cluster.local"
+        - name: CONNECT_LOG4J_LOGGERS
+          value: "org.reflections=ERROR"
+        - name: CONNECT_PLUGIN_PATH
+          value: "/usr/share/java"
         ports:
         - containerPort: 8083
         volumeMounts:
@@ -419,7 +501,7 @@ spec:
       name: connect
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      storageClassName: manual
+      storageClassName: connect
       resources:
         requests:
           storage: 5Gi

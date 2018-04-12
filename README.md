@@ -1,15 +1,13 @@
 # Confluent Kafka on Kubernetes
 
 # Table of Content
-1. [Component](#component)
-1. [Version](#version)
-1. [Kubernetes Resources](#resources)
-1. [Commands to cleanup](#cleanup)
-1. [Issues](#issues)
-    1. [Kafka Connect](#connect)
-    1. [Zookeeper](#zookeeper)
-    1. [Kafka](#kafka)
-1. [References](#references)
+1. Component
+1. Version
+1. Kubernetes Resources
+1. Commands to cleanup
+1. Issues
+1. Bash Alias
+1. References
 
 Deploying Confluent Kafka on Kubernetes
 
@@ -17,7 +15,8 @@ Deploying Confluent Kafka on Kubernetes
 
 We are only using a few of the containers/applications that Confluent offer for our Kafka cluster.
 
-1. Zookeeper - https://hub.docker.com/r/confluentinc/cp-zookeeper/
+1. Zookeeper - I was not able to get the Confluent Zookeeper working in a StatefulSet so I switched it to use the 
+    Google one - Image: k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10
 1. Kafka - https://hub.docker.com/r/confluentinc/cp-kafka/
 1. Kafka Connect - https://hub.docker.com/r/confluentinc/cp-kafka-connect/
 
@@ -49,36 +48,37 @@ po/zookeeper-1   1/1       Running            0          16m
 po/zookeeper-2   1/1       Running            0          16m
 
 NAME             TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)     AGE
-svc/connect      ClusterIP   None          <none>        32181/TCP   17m
-svc/kafka-broker ClusterIP   172.21.82.100 <none>        29092/TCP   17m
-svc/kubernetes   ClusterIP   172.21.82.1   <none>        443/TCP     8d
+svc/connect      ClusterIP   172.168.1.101 <none>        8083/TCP    17m
+svc/kafka-broker ClusterIP   172.168.1.100 <none>        29092/TCP   17m
+svc/kubernetes   ClusterIP   172.168.1.1   <none>        443/TCP     8d
 svc/zookeeper    ClusterIP   None          <none>        32181/TCP   17m
 ```
 
 ## <a name="cleanup">Commands to cleanup</a>
 
 ```
-kubectl delete statefulsets/zookeeper
+kubectl delete statefulsets/zk
 kubectl delete statefulsets/kafka
 kubectl delete statefulsets/connect
-kubectl delete svc/zookeeper
+kubectl delete svc/zk-cs
+kubectl delete svc/zk-hs
 kubectl delete svc/kafka-broker
 kubectl delete svc/connect-rest
 kubectl delete pvc/kafka-kafka-0
 kubectl delete pvc/kafka-kafka-1
 kubectl delete pvc/kafka-kafka-2
-kubectl delete pvc/zookeeper-zookeeper-0
-kubectl delete pvc/zookeeper-zookeeper-1
-kubectl delete pvc/zookeeper-zookeeper-2
+kubectl delete pvc/zookeeper-zk-0
+kubectl delete pvc/zookeeper-zk-1
+kubectl delete pvc/zookeeper-zk-2
 kubectl delete pvc/connect-connect-0
 kubectl delete pvc/connect-connect-1
 kubectl delete pvc/connect-connect-2
 kubectl delete pv/kafka0
 kubectl delete pv/kafka1
 kubectl delete pv/kafka2
-kubectl delete pv/zookeeper0
-kubectl delete pv/zookeeper1
-kubectl delete pv/zookeeper2
+kubectl delete pv/zk0
+kubectl delete pv/zk1
+kubectl delete pv/zk2
 kubectl delete pv/connect0
 kubectl delete pv/connect1
 kubectl delete pv/connect2
@@ -86,90 +86,27 @@ kubectl delete pv/connect2
 
 ## <a name="issues">Issues</a>
 
-### <a name="connect">Kafka Connect</a>
+None at this time
 
-Containers are not starting properly.
+## Bash Alias
 
-The logs are:
-
-```
-. /etc/confluent/docker/apply-mesos-overrides
-+ . /etc/confluent/docker/apply-mesos-overrides
-#!/usr/bin/env bash
-#
-# Copyright 2016 Confluent Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# Mesos DC/OS docker deployments will have HOST and PORT0
-# set for the proxying of the service.
-#
-# Use those values provide things we know we'll need.
-[ -n "${HOST:-}" ] && [ -z "${CONNECT_REST_ADVERTISED_HOST_NAME:-}" ] && \
-        export CONNECT_REST_ADVERTISED_HOST_NAME=$HOST || true
-++ '[' -n '' ']'
-++ true
-[ -n "${PORT0:-}" ] && [ -z "${CONNECT_REST_ADVERTISED_PORT:-}" ] && \
-        export CONNECT_REST_ADVERTISED_PORT=$PORT0 || true
-++ '[' -n '' ']'
-++ true
-# And default to 8083, which MUST match the containerPort specification
-# in the Mesos package for this service.
-[ -z "${CONNECT_REST_PORT:-}" ] && \
-        export CONNECT_REST_PORT=8083 || true
-++ '[' -z '' ']'
-++ export CONNECT_REST_PORT=8083
-++ CONNECT_REST_PORT=8083
-echo "===> ENV Variables ..."
-+ echo '===> ENV Variables ...'
-env | sort
-+ env
-+ sort
-echo "===> User"
-+ echo '===> User'
-id
-+ id
-echo "===> Configuring ..."
-+ echo '===> Configuring ...'
-/etc/confluent/docker/configure
-+ /etc/confluent/docker/configure
-dub ensure CONNECT_BOOTSTRAP_SERVERS
-+ dub ensure CONNECT_BOOTSTRAP_SERVERS
-CONNECT_BOOTSTRAP_SERVERS is required.
-Command [/usr/local/bin/dub ensure CONNECT_BOOTSTRAP_SERVERS] FAILED !
-```
-
-### <a name="zookeeper">Zookeeper</a>
-
-It is running in standalone mode:
+I have these because I don't like to type too much:
 
 ```
-[2018-04-04 13:48:39,251] WARN Either no config or no quorum defined in config, running  in standalone mode (org.apache.zookeeper.server.quorum.QuorumPeerMain)
-[2018-04-04 13:48:39,266] INFO Reading configuration from: /etc/kafka/zookeeper.properties (org.apache.zookeeper.server.quorum.QuorumPeerConfig)
-...
-[2018-04-04 13:48:39,273] INFO Server environment:host.name=zookeeper-0.zookeeper.default.svc.cluster.local (org.apache.zookeeper.server.ZooKeeperServer)
+alias k="kubectl"
+alias kd="kubectl delete"
+alias kg="kubectl get"
+alias kga="kubectl get all"
+alias kl="kubectl logs"
+alias ke="kubectl exec -it"
+alias ka="kubectl apply"
 ```
 
-### <a name="kafka">Kafka</a>
-
-The containers are connecting to 1 Zookeeper node
-It is working but probably not very HA.
-Not sure what happens if that zookeeper node was to die or restart
-
-
-## <a name="references">References</a>
+## <a href="references">References</a>
 
 - https://github.com/Yolean/confluent-quickstart-kubernetes
 - https://kubernetes.io/docs/tutorials/stateful-application/zookeeper/
 - https://github.com/confluentinc/schema-registry/issues/689
 - https://github.com/kubernetes/kubernetes/issues/40651
 - https://github.com/confluentinc/cp-docker-images/wiki/Getting-Started
+- https://kubernetes.io/docs/tasks/run-application/run-replicated-stateful-application/
