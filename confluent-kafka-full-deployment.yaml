@@ -259,7 +259,6 @@ metadata:
 spec:
   ports:
   - port: 9092
-  clusterIP: 172.168.1.100
   selector:
     app: kafka
 ---
@@ -273,11 +272,23 @@ spec:
       app: kafka
   serviceName: "kafka-broker"
   replicas: 3
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: kafka
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - kafka
+              topologyKey: "kubernetes.io/hostname"
       terminationGracePeriodSeconds: 10
       containers:
       - name: kafka
@@ -441,7 +452,6 @@ metadata:
 spec:
   ports:
   - port: 8083
-  clusterIP: 172.168.1.101
   selector:
     app: connect
 ---
@@ -455,18 +465,30 @@ spec:
       app: connect
   serviceName: "connect-rest"
   replicas: 3
+  updateStrategy:
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: connect
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - connect
+              topologyKey: "kubernetes.io/hostname"
       terminationGracePeriodSeconds: 10
       containers:
       - name: connect
         image: docker.artifactory.company.com/kafka/cp-kafka-connect:3.3.1
         env:
         - name: CONNECT_BOOTSTRAP_SERVERS
-          value: "PLAINTEXT://kafka-broker.default.svc.cluster.local:9092"
+          value: "kafka-broker.default.svc.cluster.local:9092"
         - name: CONNECT_REST_PORT
           value: "8083"
         - name: CONNECT_GROUP_ID
