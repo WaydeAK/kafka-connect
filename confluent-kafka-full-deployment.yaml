@@ -1,448 +1,41 @@
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: kafka0
-  labels:
-    type: local
-spec:
-  storageClassName: kafka0
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/kafka/kafka-0"
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: kafka1
-  labels:
-    type: local
-spec:
-  storageClassName: kafka1
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/kafka/kafka-1"
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: kafka2
-  labels:
-    type: local
-spec:
-  storageClassName: kafka2
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/kafka/kafka-2"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: kafka-kafka-0
-spec:
-  storageClassName: kafka0
-  accessModes:
-    - ReadWriteOnce
-  volumeName: kafka0
-  resources:
-    requests:
-      storage: 10Gi
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: kafka-kafka-1
-spec:
-  storageClassName: kafka1
-  accessModes:
-    - ReadWriteOnce
-  volumeName: kafka1
-  resources:
-    requests:
-      storage: 10Gi
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: kafka-kafka-2
-spec:
-  storageClassName: kafka2
-  accessModes:
-    - ReadWriteOnce
-  volumeName: kafka2
-  resources:
-    requests:
-      storage: 10Gi
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: zk0
-  labels:
-    type: local
-spec:
-  storageClassName: zk0
-  capacity:
-    storage: 1Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/zookeeper/zk-0"
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: zk1
-  labels:
-    type: local
-spec:
-  storageClassName: zk1
-  capacity:
-    storage: 1Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/zookeeper/zk-1"
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: zk2
-  labels:
-    type: local
-spec:
-  storageClassName: zk2
-  capacity:
-    storage: 1Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/zookeeper/zk-2"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: zookeeper-zk-0
-spec:
-  storageClassName: zk0
-  accessModes:
-    - ReadWriteOnce
-  volumeName: zk0
-  resources:
-    requests:
-      storage: 1Gi
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: zookeeper-zk-1
-spec:
-  storageClassName: zk1
-  accessModes:
-    - ReadWriteOnce
-  volumeName: zk1
-  resources:
-    requests:
-      storage: 1Gi
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: zookeeper-zk-2
-spec:
-  storageClassName: zk2
-  accessModes:
-    - ReadWriteOnce
-  volumeName: zk2
-  resources:
-    requests:
-      storage: 1Gi
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: connect0
-  labels:
-    type: local
-spec:
-  storageClassName: connect0
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/connect/connect-0"
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: connect1
-  labels:
-    type: local
-spec:
-  storageClassName: connect1
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/connect/connect-1"
----
-kind: PersistentVolume
-apiVersion: v1
-metadata:
-  name: connect2
-  labels:
-    type: local
-spec:
-  storageClassName: connect2
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteMany
-  hostPath:
-    path: "/kafka/connect/connect-2"
----
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: connect-connect-0
-spec:
-  storageClassName: connect0
-  accessModes:
-    - ReadWriteOnce
-  volumeName: connect0
-  resources:
-    requests:
-      storage: 10Gi
----
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: connect-connect-1
 spec:
-  storageClassName: connect1
+  storageClassName: connect
   accessModes:
     - ReadWriteOnce
   volumeName: connect1
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi
 ---
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: connect-connect-2
 spec:
-  storageClassName: connect2
+  storageClassName: connect
   accessModes:
     - ReadWriteOnce
   volumeName: connect2
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi
 ---
+kind: PersistentVolumeClaim
 apiVersion: v1
-kind: Service
 metadata:
-  name: kafka-broker
-  labels:
-    app: kafka
+  name: connect-connect-3
 spec:
-  ports:
-  - port: 9092
-  selector:
-    app: kafka
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: kafka
-spec:
-  selector:
-    matchLabels:
-      app: kafka
-  serviceName: "kafka-broker"
-  replicas: 3
-  updateStrategy:
-    type: RollingUpdate
-  template:
-    metadata:
-      labels:
-        app: kafka
-    spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: "app"
-                    operator: In
-                    values:
-                    - kafka
-              topologyKey: "kubernetes.io/hostname"
-      terminationGracePeriodSeconds: 10
-      containers:
-      - name: kafka
-        image: docker.artifactory.company.com/kafka/cp-kafka:3.3.1
-        env:
-        - name: KAFKA_ZOOKEEPER_CONNECT
-          value: "zk-cs:2181"
-        - name: KAFKA_ADVERTISED_LISTENERS
-          value: PLAINTEXT://kafka-broker.default.svc.cluster.local:9092
-        ports:
-        - containerPort: 9092
-        volumeMounts:
-        - name: kafka
-          mountPath: /kafka/kafka
-  volumeClaimTemplates:
-  - metadata:
-      name: kafka
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 10Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: zk-hs
-  labels:
-    app: zk
-spec:
-  ports:
-  - port: 2888
-    name: server
-  - port: 3888
-    name: leader-election
-  clusterIP: None
-  selector:
-    app: zk
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: zk-cs
-  labels:
-    app: zk
-spec:
-  ports:
-  - port: 2181
-    name: client
-  selector:
-    app: zk
----
-apiVersion: policy/v1beta1
-kind: PodDisruptionBudget
-metadata:
-  name: zk-pdb
-spec:
-  selector:
-    matchLabels:
-      app: zk
-  maxUnavailable: 1
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: zk
-spec:
-  selector:
-    matchLabels:
-      app: zk
-  serviceName: zk-hs
-  replicas: 3
-  updateStrategy:
-    type: RollingUpdate
-  podManagementPolicy: Parallel
-  template:
-    metadata:
-      labels:
-        app: zk
-    spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: "app"
-                    operator: In
-                    values:
-                    - zk
-              topologyKey: "kubernetes.io/hostname"
-      containers:
-      - name: kubernetes-zookeeper
-        imagePullPolicy: Always
-        image: "k8s.gcr.io/kubernetes-zookeeper:1.0-3.4.10"
-        resources:
-          requests:
-            memory: "1Gi"
-            cpu: "0.5"
-        ports:
-        - containerPort: 2181
-          name: client
-        - containerPort: 2888
-          name: server
-        - containerPort: 3888
-          name: leader-election
-        command:
-        - sh
-        - -c
-        - "start-zookeeper \
-          --servers=3 \
-          --data_dir=/var/lib/zookeeper/data \
-          --data_log_dir=/var/lib/zookeeper/data/log \
-          --conf_dir=/opt/zookeeper/conf \
-          --client_port=2181 \
-          --election_port=3888 \
-          --server_port=2888 \
-          --tick_time=2000 \
-          --init_limit=10 \
-          --sync_limit=5 \
-          --heap=512M \
-          --max_client_cnxns=60 \
-          --snap_retain_count=3 \
-          --purge_interval=12 \
-          --max_session_timeout=40000 \
-          --min_session_timeout=4000 \
-          --log_level=INFO"
-        readinessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - "zookeeper-ready 2181"
-          initialDelaySeconds: 10
-          timeoutSeconds: 5
-        livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - "zookeeper-ready 2181"
-          initialDelaySeconds: 10
-          timeoutSeconds: 5
-        volumeMounts:
-        - name: zookeeper
-          mountPath: /var/lib/zookeeper
-  volumeClaimTemplates:
-  - metadata:
-      name: zookeeper
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 1Gi
----
+  storageClassName: connect
+  accessModes:
+    - ReadWriteOnce
+  volumeName: connect3
+  resources:
+    requests:
+      storage: 2Gi
 apiVersion: v1
 kind: Service
 metadata:
@@ -488,7 +81,7 @@ spec:
         image: docker.artifactory.company.com/kafka/cp-kafka-connect:3.3.1
         env:
         - name: CONNECT_BOOTSTRAP_SERVERS
-          value: "kafka-broker.default.svc.cluster.local:9092"
+          value: "kafka-kafka-headless:9092"
         - name: CONNECT_REST_PORT
           value: "8083"
         - name: CONNECT_GROUP_ID
@@ -526,4 +119,4 @@ spec:
       storageClassName: connect
       resources:
         requests:
-          storage: 5Gi
+          storage: 2Gi
